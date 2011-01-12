@@ -1,0 +1,26 @@
+ProxyPreserveHost On
+UseCanonicalName off
+HostNameLookups off
+ProxyTimeout 1800
+Timeout 1800
+ProxyBadHeader Ignore
+<VirtualHost _default_:443>
+SSLProxyEngine On
+SSLEngine on
+RequestHeader set X_FORWARDED_PROTO "https"
+SSLCertificateFile <%= configuration[:ssl][:certificate_file] %>
+SSLCertificateKeyFile <%= configuration[:ssl][:certificate_key_file] %>
+<% if configuration[:ssl][:certificate_chain_file] %>
+SSLCertificateChainFile <%= configuration[:ssl][:certificate_chain_file] %>
+<% else %>
+<% end %>
+ServerName https-proxy
+  <Location />
+    Allow from all
+    ProxyPass http://localhost:80/
+    SetEnv proxy-nokeepalive 1
+  </Location>
+  ErrorLog /var/log/apache2/error.log
+  LogLevel warn
+  CustomLog /var/log/apache2/access.log combined
+</VirtualHost>

@@ -1,0 +1,13 @@
+= Moonshine Haproxy
+
+=== A plugin for Moonshine[http://github.com/railsmachine/moonshine]
+
+A plugin for installing and managing HAProxy.
+
+=== Instructions
+
+* <tt>script/plugin install git://github.com/railsmachine/moonshine_haproxy.git</tt>
+* Configure settings if needed
+    configure(:haproxy => {:foo => true})
+* Invoke the recipe(s) in your Moonshine manifest
+    recipe :haproxy

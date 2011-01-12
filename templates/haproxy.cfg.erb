@@ -1,0 +1,114 @@
+global
+  # maximum number of simultaneous active connections from an upstream web server
+  maxconn <%= configuration[:haproxy][:maxconn] || 4096 %>
+
+  # Logging to syslog facility local0
+  log   127.0.0.1       local0 info
+
+  # Distribute the health checks with a bit of randomness
+  spread-checks 5
+
+  # Uncomment the statement below to turn on verbose logging
+  #debug
+
+# Settings in the defaults section apply to all services (unless you change it,
+# this configuration defines one service, called rails).
+defaults
+
+  # apply log settings from the global section above to services
+  log global
+
+  # Proxy incoming traffic as HTTP requests
+  mode http
+
+  # Distribute incoming requests between Mongrels by connection count
+  balance leastconn
+
+  # Maximum number of simultaneous active connections from an upstream web server 
+  # per service
+  maxconn <%= configuration[:haproxy][:maxconn_service] || 4096 %>
+
+  # Log details about odd HTTP requests
+  option httplog
+  option dontlognull
+  #option dontlog-normal
+
+  # Abort request if client closes its output channel while waiting for the 
+  # request. HAProxy documentation has a long explanation for this option.
+  option abortonclose
+
+  # Enable insertion of the X-Forwarded-For header to requests sent to servers
+  option forwardfor
+
+  # Check if a "Connection: close" header is already set in each direction,
+  # and will add one if missing.
+  option forceclose
+  option httpclose
+  option forceclose
+
+  # Timeout a request if the client did not read any data for 4 seconds
+  timeout client 4s
+
+  # Timeout a request if Passenger does not accept a connection for 15 seconds
+  timeout connect 45s
+
+  # Timeout if a response isn't sent back within 5 minutes
+  timeout server 300s
+
+  # Remove the server from the farm gracefully if the health check URI returns
+  # a 404. This is useful for rolling restarts.
+  http-check disable-on-404
+
+  # Balance requests between all backup servers instead of using only the first one.
+  option allbackups
+
+  # Enable the statistics page 
+  stats enable
+  stats uri     /haproxy?stats
+
+  # Create a monitorable URI which returns a 200 if haproxy is up
+  monitor-uri /haproxy-monitor
+
+  # Amount of time after which a health check is considered to have timed out
+  #timeout check 10000
+
+  option httpchk HEAD /robots.txt HTTP/1.0
+<% configuration[:haproxy][:backends].each do |backend| %>
+backend <%= backend[:name] %>
+  <%= "balance #{backend[:balance]}" if backend[:balance] %>
+  <% backend[:servers].each do |server| %>
+  server <%= server[:name] %> <%= server[:url] %> <%= "weight #{server[:weight]} " if server[:weight] %><%= "maxconn #{server[:maxconn]} " if server[:maxconn] %>
+  <% end %>
+<% end %>
+
+frontend rails
+  bind 0.0.0.0:80
+  capture request header Host len 15
+  mode http
+  option httplog
+  log global
+
+  default_backend <%= configuration[:haproxy][:default_backend] %>
+
+  # ACLs
+  #
+  # Defines rules used to assign requests to backends later
+
+  <% configuration[:haproxy][:acl_list].each do |acl| %>
+  <%= "acl #{acl}" %>
+  <% end if configuration[:haproxy][:acl_list] %>
+
+  # Rules
+  #
+  # use_backend is used with ACLs from above to control which requests go to 
+  # which backends
+  #
+  # There may be as many "use_backend" rules as desired. All of these rules are
+  # evaluated in their declaration order, and the first one which matches will
+  # assign the backend.
+
+  <% configuration[:haproxy][:use_backend_rules].each do |rule| %>
+  <%= "use_backend #{rule}" %>
+  <% end if configuration[:haproxy][:acl_list] %>
+
+
