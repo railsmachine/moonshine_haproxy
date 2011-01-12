@@ -11,3 +11,14 @@ A plugin for installing and managing HAProxy.
     configure(:haproxy => {:foo => true})
 * Invoke the recipe(s) in your Moonshine manifest
     recipe :haproxy
+
+=== Example Configuration in moonshine.yml
+
+    :haproxy:
+      :default_backend: apps
+      :backends:
+        - {:name: apps, :balance: roundrobin, :servers: [{:url: app1.example.com:80, :name: app1, :maxconn: 1000},{:url: app2.example.com:80, :name: app2, :maxconn: 1000}]}
+
+    :ssl:
+      :certificate_file: /srv/example/shared/config/ssl/example.com.crt
+      :certificate_key_file: /srv/example/shared/config/ssl/example.com.key
