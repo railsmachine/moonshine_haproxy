@@ -23,6 +23,7 @@ module Moonshine
 
       package 'haproxy', :ensure => :absent
       package 'wget', :ensure => :installed
+      package 'libpcre3-dev', :ensure => :installed
       exec 'download haproxy',
         :command => "wget http://haproxy.1wt.eu/download/#{options[:major_version]}/src/haproxy-#{options[:version]}.tar.gz",
         :require => package('wget'),
@@ -34,8 +35,8 @@ module Moonshine
         :cwd     => '/usr/local/src',
         :creates => "/usr/local/src/haproxy-#{options[:version]}"
       exec 'compile haproxy',
-        :command => 'make TARGET=linux26',
-        :require => exec('untar haproxy'),
+        :command => 'make TARGET=linux26 USE_PCRE=1 USE_STATIC_PCRE=1 USE_LINUX_SPLICE=1 USE_REGPARM=1',
+        :require => [exec('untar haproxy'), package('libpcre3-dev')],
         :cwd     => "/usr/local/src/haproxy-#{options[:version]}",
         :creates => "/usr/local/src/haproxy-#{options[:version]}/haproxy"
       package 'haproxy',
