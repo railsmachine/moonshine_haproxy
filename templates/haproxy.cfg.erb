@@ -50,7 +50,7 @@ defaults
 
   timeout connect <%= configuration[:haproxy][:connect_timeout] || '15s'%>
 
-  timeout connect <%= configuration[:haproxy][:server_timeout] || '15s'%>
+  timeout server <%= configuration[:haproxy][:server_timeout] || '15s'%>
 
   timeout check <%= configuration[:haproxy][:check_timeout] || '10s'%>
 
