@@ -11,15 +11,44 @@ module Moonshine
     #    recipe :haproxy
     def haproxy(options = {})
       # define the recipe
-      # options specified with the configure method will be 
+      # options specified with the configure method will be
       # automatically available here in the options hash.
       #    options[:foo]   # => true
-            
-      options = HashWithIndifferentAccess.new({
-        :ssl => true
-      }.merge(options))
 
-      package 'haproxy', :ensure => :installed
+      options = HashWithIndifferentAccess.new({
+        :ssl     => true,
+        :version => '1.4.11'
+      }.merge(options))
+      options[:major_version] = options[:version].split('.')[0..1].join('.')
+
+      package 'haproxy', :ensure => :absent
+      package 'wget', :ensure => :installed
+      exec 'download haproxy',
+        :command => "wget http://haproxy.1wt.eu/download/#{options[:major_version]}/src/haproxy-#{options[:version]}.tar.gz",
+        :require => package('wget'),
+        :cwd     => '/usr/local/src',
+        :creates => "/usr/local/src/haproxy-#{options[:version]}.tar.gz"
+      exec 'untar haproxy',
+        :command => "tar xzvf haproxy-#{options[:version]}.tar.gz",
+        :require => exec('download haproxy'),
+        :cwd     => '/usr/local/src',
+        :creates => "/usr/local/src/haproxy-#{options[:version]}"
+      exec 'compile haproxy',
+        :command => 'make TARGET=linux26',
+        :require => exec('untar haproxy'),
+        :cwd     => "/usr/local/src/haproxy-#{options[:version]}",
+        :creates => "/usr/local/src/haproxy-#{options[:version]}/haproxy"
+      package 'haproxy',
+        :ensure   => :absent,
+        :require   => exec('compile haproxy')
+      exec 'install haproxy',
+        :command => "sudo make install",
+        :timeout => 0,
+        :require => package('haproxy'),
+        :cwd     => "/usr/local/src/haproxy-#{options[:version]}",
+        :unless => "test -f /usr/local/sbin/haproxy && /usr/local/sbin/haproxy -v | grep 'version #{options[:version]} '"
+
+      file '/etc/haproxy/', :ensure => :directory
       file '/etc/haproxy/haproxy.cfg',
         :ensure => :present,
         :notify => service('haproxy'),
@@ -28,12 +57,17 @@ module Moonshine
         :ensure => :present,
         :notify => service('haproxy'),
         :content => "ENABLED=1\n"
+
+      file '/etc/init.d/haproxy',
+        :ensure  => :present,
+        :mode    => '755',
+        :content => template(File.join(File.dirname(__FILE__), '..', '..', 'templates', 'init.d'), binding)
       service 'haproxy',
         :ensure => :running,
         :enable => true,
-        :require => package('haproxy')
-      
-      if configuration[:ssl] && options[:ssl]            
+        :require => [package('haproxy'), exec('install haproxy'), file('/etc/init.d/haproxy')]
+
+      if configuration[:ssl] && options[:ssl]
         recipe :apache_server
 
         a2enmod 'proxy'
@@ -67,14 +101,14 @@ module Moonshine
             :ensure => :present,
             :mode => '644'
         end
-          
+
         file "/etc/apache2/sites-available/haproxy",
           :alias => 'haproxy_vhost',
           :ensure => :present,
           :content => template(File.join(File.dirname(__FILE__), '..', '..', 'templates', 'haproxy.vhost.erb')),
           :notify => service("apache2"),
           :require => ssl_cert_files.map { |f| file(f) }
-          
+
         file "/etc/apache2/ports.conf",
           :ensure => :present,
           :content => template(File.join(File.dirname(__FILE__), '..', '..', 'templates', 'haproxy-ports.conf')),
