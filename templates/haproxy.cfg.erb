@@ -11,6 +11,8 @@ global
   # Uncomment the statement below to turn on verbose logging
   #debug
 
+  <%= configuration[:globals].join("\n") if configuration[:globals] %>
+
 # Settings in the defaults section apply to all services (unless you change it,
 # this configuration defines one service, called rails).
 defaults
@@ -72,12 +74,14 @@ defaults
   # Amount of time after which a health check is considered to have timed out
   #timeout check 10000
 
-  option httpchk HEAD /robots.txt HTTP/1.0
+  <%= configuration[:defaults].join("\n") if configuration[:defaults] %>
+
 <% configuration[:haproxy][:backends].each do |backend| %>
 backend <%= backend[:name] %>
   <%= "balance #{backend[:balance]}" if backend[:balance] %>
+  <%= backend[:options].join("\n") if backend[:options] %>
   <% backend[:servers].each do |server| %>
-  server <%= server[:name] %> <%= server[:url] %> <%= "weight #{server[:weight]} " if server[:weight] %><%= "maxconn #{server[:maxconn]} " if server[:maxconn] %>
+  server <%= server[:name] %> <%= server[:url] %> <%= "weight #{server[:weight]} " if server[:weight] %><%= "maxconn #{server[:maxconn]} " if server[:maxconn] %> <%= server[:options].join(" ") if server[:options] %>
   <% end %>
 <% end %>
 
@@ -110,5 +114,3 @@ frontend rails
   <% configuration[:haproxy][:use_backend_rules].each do |rule| %>
   <%= "use_backend #{rule}" %>
   <% end if configuration[:haproxy][:acl_list] %>
-
-
