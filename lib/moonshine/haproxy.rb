@@ -16,7 +16,7 @@ module Moonshine
       #    options[:foo]   # => true
 
       options = HashWithIndifferentAccess.new({
-        :ssl     => true,
+        :ssl     => false,
         :version => '1.4.11'
       }.merge(options))
       options[:major_version] = options[:version].split('.')[0..1].join('.')
