@@ -74,12 +74,11 @@ module Moonshine
       file '/etc/rsyslog.d/99-haproxy.conf',
         :ensure => :present,
         :notify => service('rsyslog'),
-        :content => template(File.join(File.dirname(__FILE__), '..', '..', 'templates', 'rsyslog.conf'))
+        :content => template(File.join(File.dirname(__FILE__), '..', '..', 'templates', 'haproxy.rsyslog.conf'))
 
-       logrotate('/var/log/haproxy*', {
-         :options => %w(daily missingok notifempty compress delaycompress sharedscripts),
-         :postrotate => 'reload rsyslog >/dev/null 2>&1 || true'
-       })
+      logrotate '/var/log/haproxy*',
+        :options => %w(daily missingok notifempty compress delaycompress sharedscripts),
+        :postrotate => 'reload rsyslog >/dev/null 2>&1 || true'
 
       if configuration[:ssl] && options[:ssl]
         recipe :apache_server
