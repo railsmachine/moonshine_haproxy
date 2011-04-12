@@ -2,8 +2,8 @@ global
   # maximum number of simultaneous active connections from an upstream web server
   maxconn <%= configuration[:haproxy][:maxconn] || 4096 %>
 
-  # Logging to syslog facility local0
-  log   127.0.0.1       local0 info
+  # Logging to syslog facility local0, which logs to /var/log/haproxy.log with rsyslog
+  log   127.0.0.1       local0 <%= configuration[:haproxy][:log_level] || 'info' %>
 
   # Distribute the health checks with a bit of randomness
   spread-checks 5
@@ -32,7 +32,7 @@ defaults
 
   # Log details about odd HTTP requests
   option httplog
-  option dontlognull
+  option log-separate-errors
 
   # Abort request if client closes its output channel while waiting for the 
   # request. HAProxy documentation has a long explanation for this option.
