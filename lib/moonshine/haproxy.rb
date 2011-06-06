@@ -76,9 +76,10 @@ module Moonshine
         :notify => service('rsyslog'),
         :content => template(File.join(File.dirname(__FILE__), '..', '..', 'templates', 'haproxy.rsyslog.conf'))
 
-      logrotate '/var/log/haproxy*',
+      logrotate '/var/log/haproxy*.log',
         :options => %w(daily missingok notifempty compress delaycompress sharedscripts),
         :postrotate => 'reload rsyslog >/dev/null 2>&1 || true'
+      file "/etc/logrotate.d/varloghaproxy.conf", :ensure => :absent
 
       if configuration[:ssl] && options[:ssl]
         recipe :apache_server
