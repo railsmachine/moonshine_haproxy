@@ -8,8 +8,8 @@ ProxyBadHeader Ignore
 SSLProxyEngine On
 SSLEngine on
 RequestHeader set X_FORWARDED_PROTO "https"
-SSLCertificateFile <%= configuration[:ssl][:certificate_file] %>
-SSLCertificateKeyFile <%= configuration[:ssl][:certificate_key_file] %>
+SSLCertificateFile <%= configuration[:ssl][:certificate_file] || '/etc/ssl/certs/ssl-cert-snakeoil.pem' %>
+SSLCertificateKeyFile <%= configuration[:ssl][:certificate_key_file] || '/etc/ssl/private/ssl-cert-snakeoil.key' %>
 <% if configuration[:ssl][:certificate_chain_file] %>
 SSLCertificateChainFile <%= configuration[:ssl][:certificate_chain_file] %>
 <% else %>
