@@ -79,22 +79,24 @@ backend <%= backend[:name] %>
   <% end %>
 <% end %>
 
-frontend rails
-  bind 0.0.0.0:80
-  capture request header Host len 15
-  mode http
-  option httplog
-  log global
+<% options.fetch(:frontends, default_frontends).each do |frontend| %>
+frontend <%= frontend[:name] %>
+  bind <%= frontend[:bind] %>
+  mode <%= frontend[:mode] %>
+  log <%= frontend[:log] %>
+  <%= frontend.fetch(:extra, []).join("\n") %>
 
-  default_backend <%= options[:default_backend] %>
+  <% if frontend[:default_backend] %>
+  default_backend <%= frontend[:default_backend] %>
+  <% end %>
 
   # ACLs
   #
   # Defines rules used to assign requests to backends later
 
-  <% options[:acl_list].each do |acl| %>
+  <% frontend.fetch(:acl_list, []).each do |acl| %>
   <%= "acl #{acl}" %>
-  <% end if options[:acl_list] %>
+  <% end %>
 
   # Rules
   #
@@ -105,6 +107,30 @@ frontend rails
   # evaluated in their declaration order, and the first one which matches will
   # assign the backend.
 
-  <% options[:use_backend_rules].each do |rule| %>
+  <% frontend.fetch(:use_backend_rules, []).each do |rule| %>
   <%= "use_backend #{rule}" %>
-  <% end if options[:acl_list] %>
+  <% end %>
+<% end %>
+
+<%= "default_backend #{options[:default_backend]}" if options[:default_backend] %>
+
+# ACLs
+#
+# Defines rules used to assign requests to backends later
+
+<% options[:acl_list].each do |acl| %>
+<%= "acl #{acl}" %>
+<% end if options[:acl_list] %>
+
+# Rules
+#
+# use_backend is used with ACLs from above to control which requests go to 
+# which backends
+#
+# There may be as many "use_backend" rules as desired. All of these rules are
+# evaluated in their declaration order, and the first one which matches will
+# assign the backend.
+
+<% options[:use_backend_rules].each do |rule| %>
+<%= "use_backend #{rule}" %>
+<% end if options[:acl_list] %>

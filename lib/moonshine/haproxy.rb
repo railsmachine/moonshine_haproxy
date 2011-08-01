@@ -20,6 +20,16 @@ module Moonshine
         :version => '1.4.15'
       }.merge(options))
       options[:major_version] = options[:version].split('.')[0..1].join('.')
+      default_frontends = [{
+        :name => 'rails',
+        :bind => '0.0.0.0:80',
+        :mode => 'http',
+        :log => 'global',
+        :extra => [
+          'capture request header Host len 15',
+          'option httplog'
+        ]
+      }]
 
       package 'haproxy', :ensure => :absent
       package 'wget', :ensure => :installed
