@@ -1,8 +1,8 @@
 global
   # maximum number of simultaneous active connections from an upstream web server
-  maxconn <%= configuration[:haproxy][:maxconn] || 4096 %>
+  maxconn <%= options[:maxconn] || 4096 %>
 
-  log   <%= configuration[:haproxy][:syslog_host] || '127.0.0.1' %>   <%= configuration[:haproxy][:syslog_facility] || 'local0' %> <%= configuration[:haproxy][:log_level] || 'info' %>
+  log   <%= options[:syslog_host] || '127.0.0.1' %>   <%= options[:syslog_facility] || 'local0' %> <%= options[:log_level] || 'info' %>
 
   # Distribute the health checks with a bit of randomness
   spread-checks 5
@@ -10,7 +10,7 @@ global
   # Uncomment the statement below to turn on verbose logging
   #debug
 
-  <%= configuration[:haproxy][:globals].join("\n") if configuration[:haproxy][:globals] %>
+  <%= options[:globals].join("\n") if options[:globals] %>
 
 # Settings in the defaults section apply to all services (unless you change it,
 # this configuration defines one service, called rails).
@@ -27,7 +27,7 @@ defaults
 
   # Maximum number of simultaneous active connections from an upstream web server 
   # per service
-  maxconn <%= configuration[:haproxy][:maxconn_service] || 4096 %>
+  maxconn <%= options[:maxconn_service] || 4096 %>
 
   # Log details about odd HTTP requests
   option httplog
@@ -45,13 +45,13 @@ defaults
   option forceclose
   option httpclose
 
-  timeout client <%= configuration[:haproxy][:client_timeout] || '4s'%>
+  timeout client <%= options[:client_timeout] || '4s'%>
 
-  timeout connect <%= configuration[:haproxy][:connect_timeout] || '15s'%>
+  timeout connect <%= options[:connect_timeout] || '15s'%>
 
-  timeout server <%= configuration[:haproxy][:server_timeout] || '15s'%>
+  timeout server <%= options[:server_timeout] || '15s'%>
 
-  timeout check <%= configuration[:haproxy][:check_timeout] || '10s'%>
+  timeout check <%= options[:check_timeout] || '10s'%>
 
   # Remove the server from the farm gracefully if the health check URI returns
   # a 404. This is useful for rolling restarts.
@@ -68,9 +68,9 @@ defaults
   # Create a monitorable URI which returns a 200 if haproxy is up
   monitor-uri /haproxy-monitor
 
-  <%= configuration[:haproxy][:defaults].join("\n") if configuration[:haproxy][:defaults] %>
+  <%= options[:defaults].join("\n") if options[:defaults] %>
 
-<% configuration[:haproxy][:backends].each do |backend| %>
+<% options.fetch(:backends, {}).each do |backend| %>
 backend <%= backend[:name] %>
   <%= "balance #{backend[:balance]}" if backend[:balance] %>
   <%= backend[:options].join("\n") if backend[:options] %>
@@ -86,15 +86,15 @@ frontend rails
   option httplog
   log global
 
-  default_backend <%= configuration[:haproxy][:default_backend] %>
+  default_backend <%= options[:default_backend] %>
 
   # ACLs
   #
   # Defines rules used to assign requests to backends later
 
-  <% configuration[:haproxy][:acl_list].each do |acl| %>
+  <% options[:acl_list].each do |acl| %>
   <%= "acl #{acl}" %>
-  <% end if configuration[:haproxy][:acl_list] %>
+  <% end if options[:acl_list] %>
 
   # Rules
   #
@@ -105,6 +105,6 @@ frontend rails
   # evaluated in their declaration order, and the first one which matches will
   # assign the backend.
 
-  <% configuration[:haproxy][:use_backend_rules].each do |rule| %>
+  <% options[:use_backend_rules].each do |rule| %>
   <%= "use_backend #{rule}" %>
-  <% end if configuration[:haproxy][:acl_list] %>
+  <% end if options[:acl_list] %>

@@ -1,6 +1,6 @@
 require File.join(File.dirname(__FILE__), 'spec_helper.rb')
 
-describe "A manifest with the Haproxy plugin" do
+describe "A manifest with the HAProxy plugin" do
 
   before do
     @manifest = HaproxyManifest.new
