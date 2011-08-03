@@ -30,14 +30,10 @@ describe "A manifest with the HAProxy plugin" do
 
   describe "frontends" do
 
-    it "should have a default" do
+    it "should support custom frontends" do
+      @manifest.haproxy(:frontends => [{ :name => 'rails' }, { :name => 'mail' }])
       @manifest.files['/etc/haproxy/haproxy.cfg'].content.should match /frontend rails/
-    end
-
-    it "should support custom frontends and ignore the default frontends" do
-      @manifest.haproxy(:frontends => [{ :name => 'mail' }])
       @manifest.files['/etc/haproxy/haproxy.cfg'].content.should match /frontend mail/
-      @manifest.files['/etc/haproxy/haproxy.cfg'].content.should_not match /frontend rails/
     end
 
     it "should support a default_backend" do
