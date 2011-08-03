@@ -11,6 +11,23 @@ describe "A manifest with the HAProxy plugin" do
     @manifest.should be_executable
   end
 
+  it "should install a default version" do
+    @manifest.execs['download haproxy'].command.should match /wget http:\/\/haproxy.1wt.eu\/download\/1.4\/src\/haproxy-1.4.15.tar.gz/
+  end
+
+  it "should install a custom version" do
+    @manifest.haproxy(:version => '2.3.11')
+    @manifest.execs['download haproxy'].command.should match /wget http:\/\/haproxy.1wt.eu\/download\/2.3\/src\/haproxy-2.3.11.tar.gz/
+  end
+
+  it "should not install Apache by default" do
+    pending
+  end
+
+  it "should install Apache if SSL is needed" do
+    pending
+  end
+
   describe "frontends" do
 
     it "should have a default" do
