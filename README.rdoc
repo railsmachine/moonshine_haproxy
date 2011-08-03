@@ -22,3 +22,8 @@ A plugin for installing and managing HAProxy.
     :ssl:
       :certificate_file: /srv/example/shared/config/ssl/example.com.crt
       :certificate_key_file: /srv/example/shared/config/ssl/example.com.key
+
+=== TODO
+
+* Update docs to include a sample rails frontend
+* Create configuration generator!?
