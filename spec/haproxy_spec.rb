@@ -25,7 +25,7 @@ describe "A manifest with the HAProxy plugin" do
   end
 
   it "should install Apache if SSL is needed" do
-    pending
+    pending 'debug why the SSL option is not being passed as expected'
   end
 
   describe "frontends" do
