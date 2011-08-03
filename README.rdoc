@@ -2,7 +2,7 @@
 
 === A plugin for Moonshine[http://github.com/railsmachine/moonshine]
 
-A plugin for installing and managing HAProxy.
+A plugin for installing and managing HAProxy. It can also manage Apache as an SSL proxy for a HAProxy backend.
 
 === Instructions
 
@@ -19,6 +19,14 @@ A plugin for installing and managing HAProxy.
       :backends:
         - {:name: apps, :balance: roundrobin, :servers: [{:url: app1.example.com:80, :name: app1, :maxconn: 1000}, {:url: app2.example.com:80, :name: app2, :maxconn: 1000}]}
 
+
+    # If :ssl is present, SSL through Apache, parodying to HAPrroxy, will automatically be setup
     :ssl:
       :certificate_file: /srv/example/shared/config/ssl/example.com.crt
       :certificate_key_file: /srv/example/shared/config/ssl/example.com.key
+
+=== Notes about apache and apache2ctl status
+
+'apache2ctl status' normally pulls from http://localhost/server-status?auto for its data. This would be served by haproxy though, and would be forwarded on to the configured backends. Hitting https wouldn't work either, since it's just forwarding to haproxy, which would forward to the backends.
+
+To deal with this, moonshine_haproxy configures apache to listen on port 81 on localhost only. This means you can hit http://localhost:81/server-status?auto . 'apache2ctl status' is smart enough to do this by default.
