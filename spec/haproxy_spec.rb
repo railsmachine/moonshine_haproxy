@@ -23,13 +23,12 @@ describe "A manifest with the HAProxy plugin" do
       @manifest.files['/etc/haproxy/haproxy.cfg'].content.should_not match /frontend rails/
     end
 
-    it "should support a default_backed plus a global default_backend" do
-      @manifest.haproxy(:default_backend => 'app1', :frontends => [{ :name => 'mail', :default_backend => 'mail1' }])
+    it "should support a default_backend" do
+      @manifest.haproxy(:frontends => [{ :name => 'mail', :default_backend => 'mail1' }])
       @manifest.files['/etc/haproxy/haproxy.cfg'].content.should match /default_backend mail1/
-      @manifest.files['/etc/haproxy/haproxy.cfg'].content.should match /default_backend app1/
     end
 
-    it "should have option options" do
+    it "should have extra options" do
       @manifest.haproxy(:frontends => [{ :name => 'rails', :options => ['frontend option1', 'frontend option2'] }])
       @manifest.files['/etc/haproxy/haproxy.cfg'].content.should match /^\s*frontend option1$/
       @manifest.files['/etc/haproxy/haproxy.cfg'].content.should match /^\s*frontend option2$/

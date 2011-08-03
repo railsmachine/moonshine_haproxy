@@ -24,8 +24,8 @@ module Moonshine
           :mode => 'http',
           :log => 'global',
           :options => [
-            'capture request header Host len 15',
-            'option httplog'
+            'option httplog',
+            'capture request header Host len 15'
           ]
         }]
       }.merge(options))

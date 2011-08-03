@@ -111,26 +111,3 @@ frontend <%= frontend[:name] %>
   <%= "use_backend #{rule}" %>
   <% end %>
 <% end %>
-
-<%= "default_backend #{options[:default_backend]}" if options[:default_backend] %>
-
-# ACLs
-#
-# Defines rules used to assign requests to backends later
-
-<% options[:acl_list].each do |acl| %>
-<%= "acl #{acl}" %>
-<% end if options[:acl_list] %>
-
-# Rules
-#
-# use_backend is used with ACLs from above to control which requests go to 
-# which backends
-#
-# There may be as many "use_backend" rules as desired. All of these rules are
-# evaluated in their declaration order, and the first one which matches will
-# assign the backend.
-
-<% options[:use_backend_rules].each do |rule| %>
-<%= "use_backend #{rule}" %>
-<% end if options[:acl_list] %>
