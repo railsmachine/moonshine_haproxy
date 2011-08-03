@@ -29,10 +29,10 @@ describe "A manifest with the HAProxy plugin" do
       @manifest.files['/etc/haproxy/haproxy.cfg'].content.should match /default_backend app1/
     end
 
-    it "should have extra options" do
-      @manifest.haproxy(:frontends => [{ :name => 'rails', :extra => ['frontend extra1', 'frontend extra2'] }])
-      @manifest.files['/etc/haproxy/haproxy.cfg'].content.should match /^\s*frontend extra1$/
-      @manifest.files['/etc/haproxy/haproxy.cfg'].content.should match /^\s*frontend extra2$/
+    it "should have option options" do
+      @manifest.haproxy(:frontends => [{ :name => 'rails', :options => ['frontend option1', 'frontend option2'] }])
+      @manifest.files['/etc/haproxy/haproxy.cfg'].content.should match /^\s*frontend option1$/
+      @manifest.files['/etc/haproxy/haproxy.cfg'].content.should match /^\s*frontend option2$/
     end
 
   end

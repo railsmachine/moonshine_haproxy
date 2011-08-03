@@ -84,7 +84,7 @@ frontend <%= frontend[:name] %>
   bind <%= frontend[:bind] %>
   mode <%= frontend[:mode] %>
   log <%= frontend[:log] %>
-  <%= frontend.fetch(:extra, []).join("\n") %>
+  <%= frontend.fetch(:options, []).join("\n") %>
 
   <% if frontend[:default_backend] %>
   default_backend <%= frontend[:default_backend] %>

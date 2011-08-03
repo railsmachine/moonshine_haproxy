@@ -25,7 +25,7 @@ module Moonshine
         :bind => '0.0.0.0:80',
         :mode => 'http',
         :log => 'global',
-        :extra => [
+        :options => [
           'capture request header Host len 15',
           'option httplog'
         ]
