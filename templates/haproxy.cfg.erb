@@ -70,7 +70,7 @@ defaults
 
   <%= options[:defaults].join("\n") if options[:defaults] %>
 
-<% options.fetch(:backends, {}).each do |backend| %>
+<% options.fetch(:backends, []).each do |backend| %>
 backend <%= backend[:name] %>
   <%= "balance #{backend[:balance]}" if backend[:balance] %>
   <%= backend[:options].join("\n") if backend[:options] %>
@@ -79,7 +79,7 @@ backend <%= backend[:name] %>
   <% end %>
 <% end %>
 
-<% options.fetch(:frontends, default_frontends).each do |frontend| %>
+<% options.fetch(:frontends, []).each do |frontend| %>
 frontend <%= frontend[:name] %>
   bind <%= frontend[:bind] %>
   mode <%= frontend[:mode] %>
