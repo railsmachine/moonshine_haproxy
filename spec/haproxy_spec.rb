@@ -28,6 +28,10 @@ describe "A manifest with the HAProxy plugin" do
     pending 'debug why the SSL option is not being passed as expected'
   end
 
+  it "should have a default mode" do
+    @manifest.files['/etc/haproxy/haproxy.cfg'].content.should match /^\s*mode http$/
+  end
+
   describe "frontends" do
 
     it "should support custom frontends" do
@@ -45,6 +49,11 @@ describe "A manifest with the HAProxy plugin" do
       @manifest.haproxy(:frontends => [{ :name => 'rails', :options => ['frontend option1', 'frontend option2'] }])
       @manifest.files['/etc/haproxy/haproxy.cfg'].content.should match /^\s*frontend option1$/
       @manifest.files['/etc/haproxy/haproxy.cfg'].content.should match /^\s*frontend option2$/
+    end
+
+    it "should have an optional mode" do
+      @manifest.haproxy(:frontends => [{ :name => 'smtp', :mode => 'tcp'}])
+      @manifest.files['/etc/haproxy/haproxy.cfg'].content.should match /^\s*mode tcp$/
     end
 
   end
