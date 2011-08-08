@@ -32,6 +32,10 @@ describe "A manifest with the HAProxy plugin" do
     @manifest.files['/etc/haproxy/haproxy.cfg'].content.should match /^\s*mode http$/
   end
 
+  it "should have a default log" do
+    @manifest.files['/etc/haproxy/haproxy.cfg'].content.should match /^\s*log global$/
+  end
+
   describe "frontends" do
 
     it "should support custom frontends" do
@@ -54,6 +58,11 @@ describe "A manifest with the HAProxy plugin" do
     it "should have an optional mode" do
       @manifest.haproxy(:frontends => [{ :name => 'smtp', :mode => 'tcp'}])
       @manifest.files['/etc/haproxy/haproxy.cfg'].content.should match /^\s*mode tcp$/
+    end
+
+    it "should have an optional log" do
+      @manifest.haproxy(:frontends => [{ :name => 'smtp', :log => 'some other logging service'}])
+      @manifest.files['/etc/haproxy/haproxy.cfg'].content.should match /^\s*log some other logging service$/
     end
 
   end

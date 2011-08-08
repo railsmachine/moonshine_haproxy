@@ -83,7 +83,7 @@ backend <%= backend[:name] %>
 frontend <%= frontend[:name] %>
   bind <%= frontend[:bind] %>
   <%= "mode #{frontend[:mode]}" if frontend[:mode] %>
-  log <%= frontend[:log] %>
+  <%= "log #{frontend[:log]}" if frontend[:log] %>
   <%= frontend.fetch(:options, []).join("\n") %>
 
   <% if frontend[:default_backend] %>
