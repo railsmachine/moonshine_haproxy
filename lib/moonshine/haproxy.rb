@@ -113,7 +113,8 @@ module Moonshine
         ssl_cert_files.each do |cert_file_path|
           file cert_file_path,
             :ensure => :present,
-            :mode => '644'
+            :mode => '644',
+            :notify => service("apache2")
         end
 
         file "/etc/apache2/sites-available/haproxy",
