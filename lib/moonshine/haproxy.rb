@@ -72,6 +72,9 @@ module Moonshine
         :ensure => :running
 
       file '/etc/rsyslog.d/99-haproxy.conf',
+        :ensure => :absent,
+        :notify => service('rsyslog')
+      file '/etc/rsyslog.d/40-haproxy.conf',
         :ensure => :present,
         :notify => service('rsyslog'),
         :content => template(File.join(File.dirname(__FILE__), '..', '..', 'templates', 'haproxy.rsyslog.conf'))
