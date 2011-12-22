@@ -50,10 +50,11 @@ module Moonshine
         :unless => "test -f /usr/local/sbin/haproxy && /usr/local/sbin/haproxy -v | grep 'version #{options[:version]} '"
 
       file '/etc/haproxy/', :ensure => :directory
+      haproxy_cfg_template = options[:haproxy_cfg_template] || File.join(File.dirname(__FILE__), '..', '..', 'templates', 'haproxy.cfg.erb')
       file '/etc/haproxy/haproxy.cfg',
         :ensure => :present,
         :notify => service('haproxy'),
-        :content => template(File.join(File.dirname(__FILE__), '..', '..', 'templates', 'haproxy.cfg.erb'))
+        :content => template(haproxy_cfg_template, binding)
       file '/etc/default/haproxy',
         :ensure => :present,
         :notify => service('haproxy'),
