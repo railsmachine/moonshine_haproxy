@@ -85,7 +85,8 @@ module Moonshine
         :postrotate => 'reload rsyslog >/dev/null 2>&1 || true'
       file "/etc/logrotate.d/varloghaproxy.conf", :ensure => :absent
 
-      if configuration[:ssl] && options[:ssl]
+      ssl_configuration = configuration[:ssl] || options[:ssl] || {}
+      if ssl_configuration.any?
         recipe :apache_server
 
         a2enmod 'proxy'
@@ -101,7 +102,7 @@ module Moonshine
         file "/etc/apache2/apache2.conf",
           :alias => 'apache_conf',
           :ensure => :present,
-          :content => template(File.join(File.dirname(__FILE__), '..', '..', 'templates', 'haproxy-apache2.conf')),
+          :content => template(File.join(File.dirname(__FILE__), '..', '..', 'templates', 'haproxy-apache2.conf'), binding),
           :mode => '644',
           :notify => service("apache2")
 
@@ -110,9 +111,9 @@ module Moonshine
           :mode => '755'
 
         ssl_cert_files = [
-          configuration[:ssl][:certificate_file],
-          configuration[:ssl][:certificate_key_file],
-          configuration[:ssl][:certificate_chain_file]
+          ssl_configuration[:certificate_file],
+          ssl_configuration[:certificate_key_file],
+          ssl_configuration[:certificate_chain_file]
         ].compact
         ssl_cert_files.each do |cert_file_path|
           file cert_file_path,
@@ -124,13 +125,13 @@ module Moonshine
         file "/etc/apache2/sites-available/haproxy",
           :alias => 'haproxy_vhost',
           :ensure => :present,
-          :content => template(File.join(File.dirname(__FILE__), '..', '..', 'templates', 'haproxy.vhost.erb')),
+          :content => template(File.join(File.dirname(__FILE__), '..', '..', 'templates', 'haproxy.vhost.erb'), binding),
           :notify => service("apache2"),
           :require => ssl_cert_files.map { |f| file(f) }
 
         file "/etc/apache2/ports.conf",
           :ensure => :present,
-          :content => template(File.join(File.dirname(__FILE__), '..', '..', 'templates', 'haproxy-ports.conf')),
+          :content => template(File.join(File.dirname(__FILE__), '..', '..', 'templates', 'haproxy-ports.conf'), binding),
           :mode => '644',
           :notify => service("apache2")
 
@@ -139,14 +140,14 @@ module Moonshine
         file "/etc/apache2/sites-available/default",
           :alias => 'default_vhost',
           :ensure => :present,
-          :content => template(File.join(File.dirname(__FILE__), '..', '..', 'templates', 'haproxy-default')),
+          :content => template(File.join(File.dirname(__FILE__), '..', '..', 'templates', 'haproxy-default'), binding),
           :mode => '644',
           :notify => service("apache2")
 
         file "/etc/apache2/envvars",
           :alias => 'apache_envvars',
           :ensure => :present,
-          :content => template(File.join(File.dirname(__FILE__), '..', '..', 'templates', 'haproxy-envvars')),
+          :content => template(File.join(File.dirname(__FILE__), '..', '..', 'templates', 'haproxy-envvars'), binding),
           :mode => '644',
           :notify => service("apache2")
 
