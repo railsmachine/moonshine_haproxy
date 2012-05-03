@@ -64,6 +64,9 @@ defaults
   # Enable the statistics page 
   stats enable
   stats uri     /haproxy?stats
+<% if configuration[:haproxy][:stats_auth] %>
+  stats auth <%= configuration[:haproxy][:stats_auth] %>
+<% end %>
 
   # Create a monitorable URI which returns a 200 if haproxy is up
   monitor-uri /haproxy-monitor
