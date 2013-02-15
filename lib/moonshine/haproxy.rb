@@ -51,6 +51,37 @@ module Moonshine
 
       file '/etc/haproxy/', :ensure => :directory
       haproxy_cfg_template = options[:haproxy_cfg_template] || File.join(File.dirname(__FILE__), '..', '..', 'templates', 'haproxy.cfg.erb')
+      
+      errorfiles = {}
+      error_code_descriptions = {
+                                  '400' => "Bad Request",
+                                  '403' => "Forbidden",
+                                  '408' => "Request Timeout",
+                                  '500' => "Internal Server Error",
+                                  '503' => "Service Unavailable",
+                                  '504' => "Gateway Timeout"
+                                } 
+      error_code_descriptions.each do |status,status_description|
+        error_file = rails_root.join("public/#{status}.html")
+        if error_file.exist?
+          errorfiles[status] = "/etc/haproxy/#{status}.http"
+          file "/etc/haproxy/#{status}.http",
+            :ensure => :present,
+            :before => file('/etc/haproxy/haproxy.cfg'),
+            :notify => service('haproxy'),
+            :content => <<-END
+HTTP/1.0 #{status} #{status_description}
+Cache-Control: no-cache
+Connection: close
+Content-Type: text/html
+
+#{error_file.read}          
+END
+        end
+      end
+      
+      configure(:haproxy => {:errorfiles => errorfiles})
+
       file '/etc/haproxy/haproxy.cfg',
         :ensure => :present,
         :notify => service('haproxy'),
@@ -156,5 +187,6 @@ module Moonshine
         a2ensite "haproxy", :require => file('haproxy_vhost')
       end
     end
+    
   end
 end
