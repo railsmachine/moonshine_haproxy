@@ -25,6 +25,16 @@ A plugin for installing and managing HAProxy. It can also manage Apache as an SS
       :certificate_file: /srv/example/shared/config/ssl/example.com.crt
       :certificate_key_file: /srv/example/shared/config/ssl/example.com.key
 
+=== Custom Error Pages
+
+If you'd like to replace the default haproxy error pages, you can do so by adding the following to the :haproxy: section in config/moonshine.yml:
+
+    :haproxy:
+      :errorfiles:
+        500: /srv/yoursite/current/public/500.html
+        
+The status codes that haproxy will handle this way are: 400, 403, 408, 500, 502, 503, and 504.
+
 === Notes about apache and apache2ctl status
 
 'apache2ctl status' normally pulls from http://localhost/server-status?auto for its data. This would be served by haproxy though, and would be forwarded on to the configured backends. Hitting https wouldn't work either, since it's just forwarding to haproxy, which would forward to the backends.
