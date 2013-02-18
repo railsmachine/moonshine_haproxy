@@ -52,6 +52,9 @@ defaults
   timeout server <%= configuration[:haproxy][:server_timeout] || '15s'%>
 
   timeout check <%= configuration[:haproxy][:check_timeout] || '10s'%>
+<% if configuration[:haproxy][:http_request_timeout] %>
+  timeout http-request <%= configuration[:haproxy][:http_request_timeout] %>
+<% end %>
 
   # Remove the server from the farm gracefully if the health check URI returns
   # a 404. This is useful for rolling restarts.
