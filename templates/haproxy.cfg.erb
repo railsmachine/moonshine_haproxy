@@ -61,6 +61,17 @@ defaults
   # Balance requests between all backup servers instead of using only the first one.
   option allbackups
 
+  # Error pages to display instead of the defaults if configured.
+  <% 
+  if configuration[:haproxy][:errorfiles]
+    configuration[:haproxy][:errorfiles].each do |k,v|
+  %>
+  errorfile <%= k %> <%= v %>
+  <%
+    end
+  end
+  %>
+
   # Enable the statistics page 
   stats enable
   stats uri     /haproxy?stats

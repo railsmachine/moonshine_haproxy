@@ -30,3 +30,9 @@ A plugin for installing and managing HAProxy. It can also manage Apache as an SS
 'apache2ctl status' normally pulls from http://localhost/server-status?auto for its data. This would be served by haproxy though, and would be forwarded on to the configured backends. Hitting https wouldn't work either, since it's just forwarding to haproxy, which would forward to the backends.
 
 To deal with this, moonshine_haproxy configures apache to listen on port 81 on localhost only. This means you can hit http://localhost:81/server-status?auto . 'apache2ctl status' is smart enough to do this by default.
+
+=== Custom Error Pages
+
+moonshine_haproxy now has support for custom error pages!  If you create files in your app's public directory named 400.html (or 403, 408, 503 or 504).html, the plugin will pick them up on deploy and turn them into custom errorfiles and use them instead of the default (ugly) responses.  
+
+The only gotcha with those pages is that they shouldn't use any external assets served from the app (images, css, javascript) - since they're served directly by HAProxy when something is wrong with the app servers.  If you need to display images or use other external assets, they should be hosted somewhere like S3.
