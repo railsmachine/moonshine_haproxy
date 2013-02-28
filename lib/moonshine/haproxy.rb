@@ -17,9 +17,22 @@ module Moonshine
 
       options = HashWithIndifferentAccess.new({
         :ssl     => false,
-        :version => '1.4.15'
+        :version => '1.4.15',
+        :restart_on_change => false,
+        :reload_on_change => true
       }.merge(options))
       options[:major_version] = options[:version].split('.')[0..1].join('.')
+
+      if options[:restart_on_change]
+        haproxy_notifies = [service('haproxy')]
+        haproxy_service_restart = "/etc/init.d/haproxy restart"
+      elsif options[:reload_on_change] 
+        haproxy_notifies = [service('haproxy')]
+        haproxy_service_restart = "/etc/init.d/haproxy reload"
+      else 
+        haproxy_notifies = [] 
+        haproxy_service_restart = "/etc/init.d/haproxy restart"
+      end 
 
       package 'haproxy', :ensure => :absent
       package 'wget', :ensure => :installed
@@ -68,7 +81,7 @@ module Moonshine
           file "/etc/haproxy/#{status}.http",
             :ensure => :present,
             :before => file('/etc/haproxy/haproxy.cfg'),
-            :notify => service('haproxy'),
+            :notify => haproxy_notifies,
             :content => <<-END
 HTTP/1.0 #{status} #{status_description}
 Cache-Control: no-cache
@@ -84,7 +97,7 @@ END
 
       file '/etc/haproxy/haproxy.cfg',
         :ensure => :present,
-        :notify => service('haproxy'),
+        :notify => haproxy_notifies,
         :content => template(haproxy_cfg_template, binding)
       file '/etc/default/haproxy',
         :ensure => :present,
@@ -98,6 +111,7 @@ END
       service 'haproxy',
         :ensure => :running,
         :enable => true,
+        :restart => haproxy_service_restart,
         :require => [package('haproxy'), exec('install haproxy'), file('/etc/init.d/haproxy')]
 
       service 'rsyslog',
