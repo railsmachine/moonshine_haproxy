@@ -34,6 +34,7 @@ module Moonshine
         haproxy_service_restart = "/etc/init.d/haproxy restart"
       end 
 
+      package 'socat', :ensure => :installed
       package 'haproxy', :ensure => :absent
       package 'wget', :ensure => :installed
       package 'libpcre3-dev', :ensure => :installed
@@ -95,10 +96,29 @@ END
       
       configure(:haproxy => {:errorfiles => errorfiles})
 
+      disable_servers_lines = []
+      enable_servers_lines = []
+      options[:backends].each do |backend|
+        backend[:servers].each do |server|
+          unless server[:options].include? 'backup'
+            disable_servers_lines << "disable server #{backend[:name]}/#{server[:name]}"
+            enable_servers_lines << "enable server #{backend[:name]}/#{server[:name]}"
+          end
+        end
+      end
+      disable_servers_txt = "#{disable_servers_lines.join(";")}\n"
+      enable_servers_txt = "#{enable_servers_lines.join(";")}\n"
+
       file '/etc/haproxy/haproxy.cfg',
         :ensure => :present,
         :notify => haproxy_notifies,
         :content => template(haproxy_cfg_template, binding)
+      file '/etc/haproxy/disable_servers.txt',
+        :ensure => :present,
+        :content => disable_servers_txt
+      file '/etc/haproxy/enable_servers.txt',
+        :ensure => :present,
+        :content => enable_servers_txt
       file '/etc/default/haproxy',
         :ensure => :present,
         :notify => service('haproxy'),
@@ -130,26 +150,59 @@ END
         :postrotate => 'reload rsyslog >/dev/null 2>&1 || true'
       file "/etc/logrotate.d/varloghaproxy.conf", :ensure => :absent
 
+      recipe :apache_server
+      a2enmod 'headers'
+      file "/etc/apache2/",
+        :ensure => :directory,
+        :mode => '755'
+
+      file "/etc/apache2/apache2.conf",
+        :alias => 'apache_conf',
+        :ensure => :present,
+        :content => template(File.join(File.dirname(__FILE__), '..', '..', 'templates', 'haproxy-apache2.conf'), binding),
+        :mode => '644',
+        :notify => service("apache2")
+
+      file "/etc/apache2/ports.conf",
+        :ensure => :present,
+        :content => template(File.join(File.dirname(__FILE__), '..', '..', 'templates', 'haproxy-ports.conf'), binding),
+        :mode => '644',
+        :notify => service("apache2")
+
+      a2dissite "000-default"
+
+      file "/etc/apache2/sites-available/default",
+        :alias => 'default_vhost',
+        :ensure => :present,
+        :content => template(File.join(File.dirname(__FILE__), '..', '..', 'templates', 'haproxy-default'), binding),
+        :mode => '644',
+        :notify => service("apache2")
+
+      file "/etc/apache2/envvars",
+        :alias => 'apache_envvars',
+        :ensure => :present,
+        :content => template(File.join(File.dirname(__FILE__), '..', '..', 'templates', 'haproxy-envvars'), binding),
+        :mode => '644',
+        :notify => service("apache2")
+
+      file '/etc/apache2/sites-enabled/zzz_default', :ensure => '/etc/apache2/sites-available/default'
+
+        file "/etc/apache2/sites-available/maintenance",
+          :alias => 'maintenance_vhost',
+          :ensure => :present,
+          :content => template(File.join(File.dirname(__FILE__), '..', '..', 'templates', 'maintenance.vhost.erb'), binding),
+          :notify => service("apache2")
+
+        a2ensite "maintenance", :require => file('maintenance_vhost')
+
       ssl_configuration = configuration[:ssl] || options[:ssl] || {}
       if ssl_configuration.any?
-        recipe :apache_server
 
         a2enmod 'proxy'
         a2enmod 'proxy_http'
         a2enmod 'proxy_connect'
-        a2enmod 'headers'
         a2enmod 'ssl'
 
-        file "/etc/apache2/",
-          :ensure => :directory,
-          :mode => '755'
-
-        file "/etc/apache2/apache2.conf",
-          :alias => 'apache_conf',
-          :ensure => :present,
-          :content => template(File.join(File.dirname(__FILE__), '..', '..', 'templates', 'haproxy-apache2.conf'), binding),
-          :mode => '644',
-          :notify => service("apache2")
 
         file "/etc/apache2/ssl/",
           :ensure => :directory,
@@ -174,31 +227,8 @@ END
           :notify => service("apache2"),
           :require => ssl_cert_files.map { |f| file(f) }
 
-        file "/etc/apache2/ports.conf",
-          :ensure => :present,
-          :content => template(File.join(File.dirname(__FILE__), '..', '..', 'templates', 'haproxy-ports.conf'), binding),
-          :mode => '644',
-          :notify => service("apache2")
-
-        a2dissite "000-default"
-
-        file "/etc/apache2/sites-available/default",
-          :alias => 'default_vhost',
-          :ensure => :present,
-          :content => template(File.join(File.dirname(__FILE__), '..', '..', 'templates', 'haproxy-default'), binding),
-          :mode => '644',
-          :notify => service("apache2")
-
-        file "/etc/apache2/envvars",
-          :alias => 'apache_envvars',
-          :ensure => :present,
-          :content => template(File.join(File.dirname(__FILE__), '..', '..', 'templates', 'haproxy-envvars'), binding),
-          :mode => '644',
-          :notify => service("apache2")
-
-        file '/etc/apache2/sites-enabled/zzz_default', :ensure => '/etc/apache2/sites-available/default'
-
         a2ensite "haproxy", :require => file('haproxy_vhost')
+
       end
     end
     

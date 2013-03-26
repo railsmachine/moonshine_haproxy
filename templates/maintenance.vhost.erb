@@ -1,0 +1,80 @@
+<VirtualHost *:8080>
+  ServerName <%= configuration[:domain] || (Facter.to_hash["hostname"] + '.' + Facter.to_hash["domain"]) %>
+  <% if configuration[:domain_aliases] %>
+  ServerAlias <%= configuration[:domain_aliases].to_a.join(' ') %>
+  <% end %>
+
+  DocumentRoot <%= configuration[:deploy_to] + "/current/public" %>
+
+  <Directory <%= configuration[:deploy_to] + "/current/public" %>>
+    <% if configuration[:passenger][:limit_except] %>
+      <%= configuration[:passenger][:limit_except] %>
+    <% end %>
+    Options FollowSymLinks
+    AllowOverride <%= if configuration[:apache]; configuration[:apache][:allow_override] || 'None'; else 'None'; end %>
+    Order allow,deny
+    Allow from all
+    <%= "FileETag #{configuration[:apache][:file_etag]}" if configuration[:apache][:file_etag] %>
+  </Directory>
+
+  <% if configuration[:apache ] && (configuration[:apache][:users] || configuration[:apache][:allow] || configuration[:apache][:deny]) %>
+  <Location / >
+    <% if configuration[:apache][:users] %>
+    authtype basic
+    authuserfile <%= configuration[:apache][:htpasswd] || "#{configuration[:deploy_to]}/shared/config/htpasswd" %>
+    authname "<%= configuration[:authname] || configuration[:domain] %>"
+    <% end %>
+    <Limit GET POST DELETE PUT>
+      order deny,allow
+      <% if configuration[:apache][:users] || configuration[:apache][:allow] %>
+      deny from all
+      <% end %>
+      <% configuration[:apache][:deny].to_a.each do |deny| %>
+      deny from <%= deny %>
+      <% end %>
+      <% configuration[:apache][:allow].to_a.each do |allow| %>
+      allow from <%= allow %>
+      <% end %>
+      <% if configuration[:apache][:users] %>
+      require valid-user
+      <% end %>
+      Satisfy <%= configuration[:apache][:satisfy] || 'Any' %>
+    </Limit>
+  </Location>
+  <% end %>
+
+  # TODO should we add asset pipeline here?
+
+  # Deflate
+  <IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE <%= configuration[:apache][:gzip_types].join(' ') %>
+    BrowserMatch ^Mozilla/4 gzip-only-text/html
+    BrowserMatch ^Mozilla/4\.0[678] no-gzip
+    BrowserMatch \bMSIE !no-gzip !gzip-only-text/html
+  </IfModule>
+
+  RequestHeader set X-Request-Start "%t"
+
+  RewriteEngine On
+<% if configuration[:scm].to_s == 'subversion' %>
+  # Prevent access to svn metadata
+  RewriteRule ^(.*/)?\.svn/ - [F,L]
+  ErrorDocument 403 "Access Forbidden"
+<% end %>
+
+  ErrorDocument 503 /503.html
+  Redirect 503 /system/maintenance.html
+
+  # Check for maintenance file and redirect all requests
+  RewriteCond %{REQUEST_URI} !\.(css|jpg|png|gif)$
+  RewriteCond %{DOCUMENT_ROOT}/system/maintenance.html -f
+  RewriteCond %{SCRIPT_FILENAME} !maintenance.html
+  RewriteCond %{ENV:REDIRECT_STATUS} !=503
+  RewriteRule ^.*$ /system/maintenance.html [L]
+
+  RewriteCond %{REQUEST_URI} !\.(css|jpg|png|gif)$
+  RewriteCond %{DOCUMENT_ROOT}/503.html -f
+  RewriteCond %{SCRIPT_FILENAME} !503.html
+  RewriteRule ^.*$ /503.html [R=503,L]
+
+</VirtualHost>

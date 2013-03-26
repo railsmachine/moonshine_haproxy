@@ -36,3 +36,15 @@ To deal with this, moonshine_haproxy configures apache to listen on port 81 on l
 moonshine_haproxy now has support for custom error pages!  If you create files in your app's public directory named 400.html (or 403, 408, 503 or 504).html, the plugin will pick them up on deploy and turn them into custom errorfiles and use them instead of the default (ugly) responses.  
 
 The only gotcha with those pages is that they shouldn't use any external assets served from the app (images, css, javascript) - since they're served directly by HAProxy when something is wrong with the app servers.  If you need to display images or use other external assets, they should be hosted somewhere like S3.
+
+=== Maintenance mode
+
+moonshine_haproxy support's capistrano's `deploy:web:disable` for putting the application into maintenance mode:
+
+    # disable production
+    cap production depoy:web:disable
+    # disable production with reason and until
+    cap production depoy:web:disable REASON="server maintenance" UNTIL="3AM"
+    cap production depoy:web:enable
+
+These cap tasks were moved out of the core capistrano gem into {capistrano-maintenance}[https://github.com/tvdeyen/capistrano-maintenance], so you may need to include that depending on your capistrano version.

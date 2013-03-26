@@ -10,6 +10,9 @@ global
   # Uncomment the statement below to turn on verbose logging
   #debug
 
+  # enable stats socket, for enabling/disabling servers
+  stats socket /var/run/haproxy.stat mode 600 level admin
+
   <%= configuration[:haproxy][:globals].join("\n") if configuration[:haproxy][:globals] %>
 
 # Settings in the defaults section apply to all services (unless you change it,
