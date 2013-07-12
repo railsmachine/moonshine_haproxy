@@ -99,6 +99,7 @@ backend <%= backend[:name] %>
   <% end %>
 <% end %>
 
+<% if configuration[:haproxy][:frontends].nil? || configuration[:haproxy][:frontends] == [] %>
 frontend rails
   bind 0.0.0.0:80
   capture request header Host len 15
@@ -128,3 +129,24 @@ frontend rails
   <% configuration[:haproxy][:use_backend_rules].each do |rule| %>
   <%= "use_backend #{rule}" %>
   <% end if configuration[:haproxy][:acl_list] %>
+<% else %>
+
+<% configuration[:haproxy][:frontends].each do |frontend| %>
+frontend <%= frontend[:name] %>
+  bind <%= frontend[:bind] || '0.0.0.0:80' %>
+  <% if frontend[:mode] == 'http' %>capture request header Host len 15<% end %>
+  mode <%= frontend[:mode] %>
+
+  log global
+  <% if frontend[:httplog] %>option httplog<% end %>
+  <% if frontend[:options] && frontend[:options].is_a?(Array) 
+        frontend[:options].each do |option|
+  %>
+  <%= option %>
+  <%    end 
+   end %>
+   
+  default_backend <%= frontend[:default_backend] %>
+<%  end %>
+<% end %>
+
