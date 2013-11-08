@@ -7,3 +7,4 @@ export APACHE_RUN_USER=www-data
 export APACHE_RUN_GROUP=www-data
 export APACHE_PID_FILE=/var/run/apache2.pid
 export APACHE_STATUSURL=http://localhost:81/server-status
+<% if ubuntu_precise? %>export APACHE_RUN_DIR=/var/run/apache2<% end %>
