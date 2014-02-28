@@ -102,7 +102,7 @@ backend <%= backend[:name] %>
 <% if configuration[:haproxy][:frontends].nil? || configuration[:haproxy][:frontends] == [] %>
 frontend rails
   bind 0.0.0.0:80
-  capture request header Host len 20
+  capture request header Host len <%= configuration[:haproxy][:host_length] || "20" %>
   mode http
   option httplog
   log global
