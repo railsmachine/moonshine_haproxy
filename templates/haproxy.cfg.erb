@@ -134,7 +134,7 @@ frontend rails
 <% configuration[:haproxy][:frontends].each do |frontend| %>
 frontend <%= frontend[:name] %>
   bind <%= frontend[:bind] || '0.0.0.0:80' %>
-  <% if frontend[:mode] == 'http' %>capture request header Host len 15<% end %>
+  <% if frontend[:mode] == 'http' %>capture request header Host len <%= configuration[:haproxy][:host_length] || "20" %><% end %>
   mode <%= frontend[:mode] %>
 
   log global
