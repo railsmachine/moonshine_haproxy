@@ -31,12 +31,12 @@ module Moonshine
       supports_ssl = false
       haproxy_vhost = :present
       
-      if options[:major_version].to_f >= 1.5
-        supports_ssl = true
-      end
-
       if configuration[:haproxy][:use_ssl]
+        supports_ssl = true
         haproxy_vhost = :absent
+        if options[:major_version] == "1.4"
+          raise "You must use at least version 1.5-dev22 of haproxy for SSL support."
+        end
       end
 
       devel_url = ""
@@ -57,11 +57,18 @@ module Moonshine
         haproxy_notifies = [] 
         haproxy_service_restart = "/etc/init.d/haproxy restart"
       end 
+      
+      target = "linux26"
+      if ubuntu_precise?
+        target = 'linux2628'
+      end
 
-      make_options = "TARGET=linux26 USE_PCRE=1 USE_STATIC_PCRE=1 USE_LINUX_SPLICE=1 USE_REGPARM=1"
+      make_options = "TARGET=#{target} USE_PCRE=1 USE_STATIC_PCRE=1 USE_LINUX_SPLICE=1 USE_REGPARM=1"
       if supports_ssl
         make_options << " USE_OPENSSL=1 USE_ZLIB=1 clean all"
       end
+
+      puts "Make Options for haproxy: #{make_options}"
 
       package 'socat', :ensure => :installed
       package 'haproxy', :ensure => :absent
@@ -256,7 +263,9 @@ END
           :notify => service("apache2"),
           :require => ssl_cert_files.map { |f| file(f) }
 
-        a2ensite "haproxy", :require => file('haproxy_vhost')
+        unless configuration[:haproxy][:use_ssl]
+          a2ensite "haproxy", :require => file('haproxy_vhost')
+        end
 
       end
     end
