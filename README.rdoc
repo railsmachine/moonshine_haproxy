@@ -48,3 +48,20 @@ moonshine_haproxy support's capistrano's `deploy:web:disable` for putting the ap
     cap production depoy:web:enable
 
 These cap tasks were moved out of the core capistrano gem into {capistrano-maintenance}[https://github.com/tvdeyen/capistrano-maintenance], so you may need to include that depending on your capistrano version.
+
+=== HAProxy 1.5 and SSL Support
+
+moonshine_haproxy supports haproxy 1.5 and SSL, but you need to make quite a few changes to your configuration to replace the Apache SSL proxy and get SSL working with haproxy.  The first is adding the following to your moonshine.yml:
+
+<pre><code>:haproxy:
+  :version: 1.5-dev22
+  :use_ssl: true
+  :keep_alive: true</code></pre>
+  
+You'll also need a new frontend for SSL things, and the bind line needs to look like this:
+
+<pre><code>bind 0.0.0.0:443 ssl crt /path/to/your/cert.pem</code></pre>
+
+And your cert should be a pem with your key and certificate combined in a single file.
+
+Deploying with that configuration will disable the SSL VirtualHost in Apache and set HAProxy up to serve SSL requests!
