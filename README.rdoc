@@ -53,18 +53,14 @@ These cap tasks were moved out of the core capistrano gem into {capistrano-maint
 
 moonshine_haproxy supports haproxy 1.5 and SSL, but you need to make quite a few changes to your configuration to replace the Apache SSL proxy and get SSL working with haproxy.  The first is adding the following to your moonshine.yml:
 
-<pre><code>
-:haproxy:
-  :version: 1.5-dev22
-  :use_ssl: true
-  :keep_alive: true
-</code></pre>
+    :haproxy:
+      :version: 1.5-dev22
+      :use_ssl: true
+      :keep_alive: true
   
 You'll also need a new frontend for SSL things, and the bind line needs to look like this:
 
-<pre><code>
-bind 0.0.0.0:443 ssl crt /path/to/your/cert.pem
-</code></pre>
+    bind 0.0.0.0:443 ssl crt /path/to/your/cert.pem
 
 And your cert should be a pem with your key and certificate combined in a single file.
 
