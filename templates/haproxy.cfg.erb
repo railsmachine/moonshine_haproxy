@@ -10,6 +10,10 @@ global
   # Uncomment the statement below to turn on verbose logging
   #debug
 
+  <% if configuration[:haproxy][:ca_base] %>
+  ca-base <%= configuration[:haproxy][:ca_base] %>
+  <% end %>
+
   # enable stats socket, for enabling/disabling servers
   stats socket /var/run/haproxy.stat mode 600 level admin
 
@@ -35,6 +39,11 @@ defaults
   # Log details about odd HTTP requests
   option httplog
   option log-separate-errors
+  
+  <% if configuration[:haproxy][:keep_alive] %>
+  # Keep-Alive
+  option clitcpka
+  <% end %>
 
   # Abort request if client closes its output channel while waiting for the 
   # request. HAProxy documentation has a long explanation for this option.
@@ -149,4 +158,3 @@ frontend <%= frontend[:name] %>
   default_backend <%= frontend[:default_backend] %>
 <%  end %>
 <% end %>
-
