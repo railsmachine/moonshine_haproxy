@@ -21,7 +21,31 @@ module Moonshine
         :restart_on_change => false,
         :reload_on_change => true
       }.merge(options))
+      
       options[:major_version] = options[:version].split('.')[0..1].join('.')
+
+      if options[:major_version] == options[:version]
+        options[:major_version] = options[:version].split("-").first
+      end
+
+      supports_ssl = false
+      haproxy_vhost = :present
+      
+      if options[:major_version].to_f >= 1.5
+        supports_ssl = true
+      end
+
+      if configuration[:haproxy][:use_ssl]
+        haproxy_vhost = :absent
+      end
+
+      devel_url = ""
+
+      if options[:version].include?("dev")
+        devel_url = "/devel"
+      end
+      
+      haproxy_download = "http://haproxy.1wt.eu/download/#{options[:major_version]}/src#{devel_url}/haproxy-#{options[:version]}.tar.gz"
 
       if options[:restart_on_change]
         haproxy_notifies = [service('haproxy')]
@@ -34,12 +58,17 @@ module Moonshine
         haproxy_service_restart = "/etc/init.d/haproxy restart"
       end 
 
+      make_options = "TARGET=linux26 USE_PCRE=1 USE_STATIC_PCRE=1 USE_LINUX_SPLICE=1 USE_REGPARM=1"
+      if supports_ssl
+        make_options << " USE_OPENSSL=1 USE_ZLIB=1 clean all"
+      end
+
       package 'socat', :ensure => :installed
       package 'haproxy', :ensure => :absent
       package 'wget', :ensure => :installed
       package 'libpcre3-dev', :ensure => :installed
       exec 'download haproxy',
-        :command => "wget http://haproxy.1wt.eu/download/#{options[:major_version]}/src/haproxy-#{options[:version]}.tar.gz",
+        :command => "wget #{haproxy_download}",
         :require => package('wget'),
         :cwd     => '/usr/local/src',
         :creates => "/usr/local/src/haproxy-#{options[:version]}.tar.gz"
@@ -49,7 +78,7 @@ module Moonshine
         :cwd     => '/usr/local/src',
         :creates => "/usr/local/src/haproxy-#{options[:version]}"
       exec 'compile haproxy',
-        :command => 'make TARGET=linux26 USE_PCRE=1 USE_STATIC_PCRE=1 USE_LINUX_SPLICE=1 USE_REGPARM=1',
+        :command => 'make #{make_options}',
         :require => [exec('untar haproxy'), package('libpcre3-dev')],
         :cwd     => "/usr/local/src/haproxy-#{options[:version]}",
         :creates => "/usr/local/src/haproxy-#{options[:version]}/haproxy"
@@ -222,7 +251,7 @@ END
 
         file "/etc/apache2/sites-available/haproxy",
           :alias => 'haproxy_vhost',
-          :ensure => :present,
+          :ensure => haproxy_vhost,
           :content => template(File.join(File.dirname(__FILE__), '..', '..', 'templates', 'haproxy.vhost.erb'), binding),
           :notify => service("apache2"),
           :require => ssl_cert_files.map { |f| file(f) }
