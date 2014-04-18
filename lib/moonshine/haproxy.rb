@@ -29,11 +29,12 @@ module Moonshine
       end
 
       supports_ssl = false
-      haproxy_vhost = :present
+      
+      if options[:major_version].to_f >= 1.5
+        supports_ssl = true
+      end
       
       if configuration[:haproxy][:use_ssl]
-        supports_ssl = true
-        haproxy_vhost = :absent
         if options[:major_version] == "1.4"
           raise "You must use at least version 1.5-dev22 of haproxy for SSL support."
         end
@@ -63,12 +64,11 @@ module Moonshine
         target = 'linux2628'
       end
 
-      make_options = "TARGET=#{target} USE_PCRE=1 USE_STATIC_PCRE=1 USE_LINUX_SPLICE=1 USE_REGPARM=1"
+      make_cmd = "make TARGET=#{target} USE_PCRE=1 USE_STATIC_PCRE=1 USE_LINUX_SPLICE=1 USE_REGPARM=1"
       if supports_ssl
-        make_options << " USE_OPENSSL=1 USE_ZLIB=1 clean all"
+        make_cmd << " USE_OPENSSL=1 USE_ZLIB=1"
       end
-
-      puts "Make Options for haproxy: #{make_options}"
+      make_cmd << " clean all"
 
       package 'socat', :ensure => :installed
       package 'haproxy', :ensure => :absent
@@ -85,17 +85,17 @@ module Moonshine
         :cwd     => '/usr/local/src',
         :creates => "/usr/local/src/haproxy-#{options[:version]}"
       exec 'compile haproxy',
-        :command => 'make #{make_options}',
+        :command => "sudo #{make_cmd} && sudo make install",
         :require => [exec('untar haproxy'), package('libpcre3-dev')],
         :cwd     => "/usr/local/src/haproxy-#{options[:version]}",
-        :creates => "/usr/local/src/haproxy-#{options[:version]}/haproxy"
+        :unless => "test -f /usr/local/sbin/haproxy && /usr/local/sbin/haproxy -v | grep 'version #{options[:version]} '"
       package 'haproxy',
         :ensure   => :absent,
         :require   => exec('compile haproxy')
       exec 'install haproxy',
         :command => "sudo make install",
         :timeout => 0,
-        :require => package('haproxy'),
+        :require => [package('haproxy'), exec('compile haproxy')],
         :cwd     => "/usr/local/src/haproxy-#{options[:version]}",
         :unless => "test -f /usr/local/sbin/haproxy && /usr/local/sbin/haproxy -v | grep 'version #{options[:version]} '"
 
@@ -258,12 +258,14 @@ END
 
         file "/etc/apache2/sites-available/haproxy",
           :alias => 'haproxy_vhost',
-          :ensure => haproxy_vhost,
+          :ensure => :present,
           :content => template(File.join(File.dirname(__FILE__), '..', '..', 'templates', 'haproxy.vhost.erb'), binding),
           :notify => service("apache2"),
           :require => ssl_cert_files.map { |f| file(f) }
 
-        unless configuration[:haproxy][:use_ssl]
+        if configuration[:haproxy][:use_ssl]
+          a2dissite "haproxy", :notify => service('apache2')
+        else
           a2ensite "haproxy", :require => file('haproxy_vhost')
         end
 
