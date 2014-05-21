@@ -43,6 +43,10 @@
   </Location>
   <% end %>
 
+  # The maintenance page should never be cached.
+  Header Set Cache-Control "no-cache"
+  Header Set Pragma "no-cache"
+
   # TODO should we add asset pipeline here?
 
   # Deflate
