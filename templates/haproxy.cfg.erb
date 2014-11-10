@@ -99,6 +99,13 @@ defaults
 
   <%= configuration[:haproxy][:defaults].join("\n") if configuration[:haproxy][:defaults] %>
 
+<% if configuration[:haproxy][:users] %>
+userlist UsersFor_<%= configuration[:application] %>
+  <% configuration[:haproxy][:users].each do |user, password| %>
+  user <%= user %> insecure-password <%= password %>
+  <% end %>
+<% end %>
+
 <% configuration[:haproxy][:backends].each do |backend| %>
 backend <%= backend[:name] %>
   <%= "balance #{backend[:balance]}" if backend[:balance] %>
