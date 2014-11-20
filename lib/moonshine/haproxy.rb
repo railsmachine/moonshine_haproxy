@@ -21,7 +21,7 @@ module Moonshine
         :restart_on_change => false,
         :reload_on_change => true
       }.merge(options))
-      
+
       options[:major_version] = options[:version].split('.')[0..1].join('.')
 
       if options[:major_version] == options[:version]
@@ -29,11 +29,11 @@ module Moonshine
       end
 
       supports_ssl = false
-      
+
       if options[:major_version].to_f >= 1.5
         supports_ssl = true
       end
-      
+
       if configuration[:haproxy][:use_ssl]
         if options[:major_version] == "1.4"
           raise "You must use at least version 1.5-dev22 of haproxy for SSL support."
@@ -45,20 +45,20 @@ module Moonshine
       if options[:version].include?("dev")
         devel_url = "/devel"
       end
-      
+
       haproxy_download = "http://haproxy.1wt.eu/download/#{options[:major_version]}/src#{devel_url}/haproxy-#{options[:version]}.tar.gz"
 
       if options[:restart_on_change]
         haproxy_notifies = [service('haproxy')]
         haproxy_service_restart = "/etc/init.d/haproxy restart"
-      elsif options[:reload_on_change] 
+      elsif options[:reload_on_change]
         haproxy_notifies = [service('haproxy')]
         haproxy_service_restart = "/etc/init.d/haproxy reload"
-      else 
-        haproxy_notifies = [] 
+      else
+        haproxy_notifies = []
         haproxy_service_restart = "/etc/init.d/haproxy restart"
-      end 
-      
+      end
+
       target = "linux26"
       if ubuntu_precise?
         target = 'linux2628'
@@ -101,7 +101,7 @@ module Moonshine
 
       file '/etc/haproxy/', :ensure => :directory
       haproxy_cfg_template = options[:haproxy_cfg_template] || File.join(File.dirname(__FILE__), '..', '..', 'templates', 'haproxy.cfg.erb')
-      
+
       errorfiles = {}
       error_code_descriptions = {
                                   '400' => "Bad Request",
@@ -110,7 +110,7 @@ module Moonshine
                                   '500' => "Internal Server Error",
                                   '503' => "Service Unavailable",
                                   '504' => "Gateway Timeout"
-                                } 
+                                }
       error_code_descriptions.each do |status,status_description|
         error_file = rails_root.join("public/#{status}.html")
         if error_file.exist?
@@ -125,11 +125,11 @@ Cache-Control: no-cache
 Connection: close
 Content-Type: text/html
 
-#{error_file.read}          
+#{error_file.read}
 END
         end
       end
-      
+
       configure(:haproxy => {:errorfiles => errorfiles})
 
       disable_servers_lines = []
@@ -207,7 +207,7 @@ END
 
       a2dissite "000-default"
 
-      file "/etc/apache2/sites-available/default",
+      file "/etc/apache2/sites-available/default#{'.conf' if ubuntu_trusty?}",
         :alias => 'default_vhost',
         :ensure => :present,
         :content => template(File.join(File.dirname(__FILE__), '..', '..', 'templates', 'haproxy-default'), binding),
@@ -221,15 +221,15 @@ END
         :mode => '644',
         :notify => service("apache2")
 
-      file '/etc/apache2/sites-enabled/zzz_default', :ensure => '/etc/apache2/sites-available/default'
+      file "/etc/apache2/sites-enabled/zzz_default#{'.conf' if ubuntu_trusty?}", :ensure => "/etc/apache2/sites-available/default#{'.conf' if ubuntu_trusty?}"
 
-        file "/etc/apache2/sites-available/maintenance",
-          :alias => 'maintenance_vhost',
-          :ensure => :present,
-          :content => template(File.join(File.dirname(__FILE__), '..', '..', 'templates', 'maintenance.vhost.erb'), binding),
-          :notify => service("apache2")
+      file "/etc/apache2/sites-available/maintenance#{'.conf' if ubuntu_trusty?}",
+        :alias => 'maintenance_vhost',
+        :ensure => :present,
+        :content => template(File.join(File.dirname(__FILE__), '..', '..', 'templates', 'maintenance.vhost.erb'), binding),
+        :notify => service("apache2")
 
-        a2ensite "maintenance", :require => file('maintenance_vhost')
+      a2ensite "maintenance", :require => file('maintenance_vhost')
 
       ssl_configuration = configuration[:ssl] || options[:ssl] || {}
       if ssl_configuration.any?
@@ -256,7 +256,7 @@ END
             :notify => service("apache2")
         end
 
-        file "/etc/apache2/sites-available/haproxy",
+        file "/etc/apache2/sites-available/haproxy#{'.conf' if ubuntu_trusty?}",
           :alias => 'haproxy_vhost',
           :ensure => :present,
           :content => template(File.join(File.dirname(__FILE__), '..', '..', 'templates', 'haproxy.vhost.erb'), binding),
@@ -271,6 +271,6 @@ END
 
       end
     end
-    
+
   end
 end
