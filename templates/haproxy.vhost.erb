@@ -24,7 +24,7 @@ ServerAlias <%= configuration[:domain_aliases].to_a.join(' ') %>
 <% end %>
   <Location />
     Allow from all
-    ProxyPass http://localhost:80/
+    ProxyPass http://127.0.0.1:80/ retry=0
     SetEnv proxy-nokeepalive 1
   </Location>
   ErrorLog /var/log/apache2/error.log
